@@ -1,0 +1,35 @@
+---
+- name: CentOS 7 웹 배포
+  gather_facts: true
+  become: yes
+  hosts: centos
+
+  tasks:
+    - name: web 설치
+      action: "{{ ansible_pkg_mgr }} name=httpd state=present"
+
+    - name: httpd 구동
+      service: name=httpd state=started enabled=yes
+
+    - name: firewalld 해제
+      service: name=firewalld state=stopped enabled=no
+
+    - name: git 설치
+      action: "{{ ansible_pkg_mgr }} name=git state=present"
+
+    - name: index.html Update
+      git:
+        repo: https://github.com/Yunsoonsang/ansiblelab3.git
+        dest: /var/www/html/ansiblelab3
+        force: yes
+        remote: origin
+      register: git_result
+
+    - name: check git_result
+      debug:
+        var: git_result
+      notify: Restart httpd
+
+  handlers:
+    - name: Restart httpd
+      service: name=httpd state=restarted
